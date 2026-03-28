@@ -1,0 +1,8 @@
+opencv-python-headless
+ultralytics
+face-recognition
+numpy
+deep-sort-realtime
+fastapi
+uvicorn
+python-multipart
