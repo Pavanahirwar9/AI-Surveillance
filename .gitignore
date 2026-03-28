@@ -1,0 +1,8 @@
+node_modules/
+.venv311/
+__pycache__/
+*.pyc
+.env
+output/
+uploads/
+temp/
