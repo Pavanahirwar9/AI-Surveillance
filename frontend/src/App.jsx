@@ -144,7 +144,7 @@ function RealtimeDetection() {
   }, [isDetecting, detectionType]);
 
   return (
-    <div className="layout-grid">
+    <div className="workspace-grid">
       <div className="card realtime-card">
         <div className="card-header">
           <h2>Realtime Webcam Detection</h2>
@@ -352,7 +352,7 @@ function ProctoringSystem() {
   }, [isDetecting]);
 
   return (
-    <div className="layout-grid">
+    <div className="workspace-grid">
       <div className="card realtime-card" style={{ padding: '0' }}>
         <div className="card-header" style={{ padding: '20px 20px 0' }}>
           <h2>Exam Proctoring System</h2>
@@ -589,7 +589,7 @@ function App() {
             <Route path="/" element={<RealtimeDetection />} />
             <Route path="/proctor" element={<ProctoringSystem />} />
             <Route path="/batch" element={
-              <div className="layout-grid" style={{ gridTemplateColumns: '1fr', maxWidth: '800px', margin: '0 auto' }}>
+              <div className="workspace-grid" style={{ gridTemplateColumns: '1fr', maxWidth: '800px', margin: '0 auto' }}>
                 <BatchProcessing />
               </div>
             } />
