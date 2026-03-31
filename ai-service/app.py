@@ -14,8 +14,8 @@ import numpy as np
 from ultralytics import YOLO
 from datetime import datetime
 
-# Alert History Storage (In-Memory for this example)
-alert_history_db = []
+# Event History Storage (In-Memory for this example)
+event_history_db = []
 
 # Add src to python path so we can import our modules
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -129,9 +129,9 @@ TEMP_DIR = os.path.join(current_dir, "temp")
 os.makedirs(TEMP_DIR, exist_ok=True)
 
 
-@app.get("/alerts")
-async def get_alerts():
-    return JSONResponse(content={"alerts": alert_history_db[-50:]}) # Return last 50
+@app.get("/events")
+async def get_events():
+    return JSONResponse(content=event_history_db[-100:])
 
 @app.post("/detect")
 async def detect_realtime(payload: DetectRequest):
@@ -194,15 +194,17 @@ async def detect_realtime(payload: DetectRequest):
 
         if alert_info["alert"]:
             # Store in history if it's an alert
-            alert_record = {
+            event_record = {
                 "time": timestamp,
-                "type": alert_info["type"],
+                "event_type": alert_info["type"],
                 "message": alert_info["message"],
                 "severity": alert_info["severity"]
             }
-            alert_history_db.append(alert_record)
-            if len(alert_history_db) > 200:
-                alert_history_db.pop(0)
+            # Avoid duplicate consecutive events
+            if not event_history_db or event_history_db[-1]["event_type"] != alert_info["type"]:
+                event_history_db.append(event_record)
+            if len(event_history_db) > 100:
+                event_history_db.pop(0)
 
         return JSONResponse(content=response_data)
     except Exception as exc:

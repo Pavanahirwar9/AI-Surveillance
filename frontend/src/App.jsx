@@ -27,6 +27,32 @@ function AlertBanner({ alertState }) {
   );
 }
 
+
+function TimelineBar({ events }) {
+  if (!events || events.length === 0) return null;
+
+  return (
+    <div className="timeline-bar-container">
+      <p className="meta-row" style={{margin: '0 0 10px'}}><strong>Live Event Timeline</strong></p>
+      <div className="timeline-line">
+        {events.map((evt, idx) => {
+          // Normalize position when length is small to avoid stacking to the left initially
+          const position = events.length > 1 ? (idx / (events.length - 1)) * 100 : 50; 
+          return (
+            <div 
+               key={idx} 
+               className={`timeline-marker marker-${evt.severity}`}
+               style={{ left: `${position}%` }}
+               title={`${evt.time} [ ${evt.event_type || evt.type} ]: ${evt.message}`}
+               onClick={() => alert(`Time: ${evt.time}\nType: ${evt.event_type || evt.type}\nSeverity: ${evt.severity}\nMessage: ${evt.message}`)}
+            ></div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [detectionType, setDetectionType] = useState('person');
   const [alertState, setAlertState] = useState({ 
@@ -37,7 +63,7 @@ function App() {
     persons: 0,
     time: ''
   });
-  const [alertHistory, setAlertHistory] = useState([]);
+  const [events, setEvents] = useState([]);
   const [detections, setDetections] = useState([]);
   const [streaming, setStreaming] = useState(false);
   const [cameraError, setCameraError] = useState('');
@@ -67,11 +93,11 @@ function App() {
     }
   };
 
-  const fetchAlertHistory = async () => {
+  const fetchEvents = async () => {
     try {
-      const resp = await fetch(`${AI_API_URL}/alerts`);
+      const resp = await fetch(`${AI_API_URL}/events`);
       const data = await resp.json();
-      setAlertHistory(data.alerts || []);
+      setEvents(data || []);
     } catch (e) {
       console.error("Failed to fetch alert history");
     }
@@ -79,8 +105,8 @@ function App() {
 
   // Poll for alert history every 5 seconds to sync with backend changes
   useEffect(() => {
-    const histInterval = setInterval(fetchAlertHistory, 5000);
-    fetchAlertHistory();
+    const histInterval = setInterval(fetchEvents, 5000);
+    fetchEvents();
     return () => clearInterval(histInterval);
   }, []);
 
@@ -288,17 +314,20 @@ function App() {
 
         <article className="card">
           <div className="card-header">
-            <h2>Recent Security Alerts</h2>
+            <h2>Timeline & Events</h2>
             <span className="chip">History</span>
           </div>
           
+          <TimelineBar events={events} />
+
           <div className="alert-history-list">
-            {alertHistory.length === 0 ? (
-              <p className="meta-row">No alerts recorded yet.</p>
+            {events.length === 0 ? (
+              <p className="meta-row">No events recorded yet.</p>
             ) : (
-              alertHistory.slice().reverse().map((hist, idx) => (
+              events.slice().reverse().map((hist, idx) => (
                 <div key={idx} className={`history-item history-${hist.severity}`}>
                   <span className="history-time">{hist.time}</span>
+                  <span className="history-type">{hist.event_type || hist.type || 'EVENT'}</span>
                   <span className="history-msg">{hist.message}</span>
                 </div>
               ))
