@@ -44,6 +44,9 @@ app.add_middleware(
 class DetectRequest(BaseModel):
     image: str
     detectionType: Optional[str] = "person"
+    isProctoring: Optional[bool] = False
+    audioNoise: Optional[bool] = False
+    image: str
 
 
 def get_model_path() -> str:
@@ -76,6 +79,27 @@ def decode_base64_image(image_data: str):
     return frame
 
 
+def build_proctoring_message(persons: int, detected_objects: list, audio_noise: bool) -> dict:
+    result = {
+        "alert": False,
+        "type": "normal",
+        "message": "Normal activity",
+        "severity": "low"
+    }
+
+    if persons == 0:
+        result.update({"alert": True, "type": "no_person", "message": "No person detected", "severity": "high"})
+    elif persons > 1:
+        result.update({"alert": True, "type": "multiple_person", "message": f"Multiple persons detected ({persons})", "severity": "high"})
+    elif "cell phone" in detected_objects:
+        result.update({"alert": True, "type": "mobile_detected", "message": "Mobile device (cell phone) detected", "severity": "high"})
+    elif "laptop" in detected_objects or "camera" in detected_objects:
+        result.update({"alert": True, "type": "camera_detected", "message": "Secondary camera/laptop detected", "severity": "high"})
+    elif audio_noise:
+        result.update({"alert": True, "type": "voice_detected", "message": "Voice/noise of another person detected", "severity": "high"})
+
+    return result
+
 def build_detection_message(persons: int, target_detected: bool, detection_type: str) -> dict:
     normalized_target = detection_type.lower().strip()
 
@@ -87,29 +111,13 @@ def build_detection_message(persons: int, target_detected: bool, detection_type:
     }
 
     if persons == 0:
-        result.update({
-            "alert": True,
-            "type": "no_person",
-            "message": "No person detected",
-            "severity": "high"
-        })
+        result.update({"alert": True, "type": "no_person", "message": "No person detected", "severity": "high"})
     elif persons > 1:
-        result.update({
-            "alert": True,
-            "type": "multiple_person",
-            "message": f"Multiple persons detected ({persons})",
-            "severity": "high"
-        })
+        result.update({"alert": True, "type": "multiple_person", "message": f"Multiple persons detected ({persons})", "severity": "high"})
     elif normalized_target != "person" and target_detected:
-        result.update({
-            "alert": True,
-            "type": "target_detected",
-            "message": f"Target object detected: {normalized_target}",
-            "severity": "medium"
-        })
+        result.update({"alert": True, "type": "target_detected", "message": f"Target object detected: {normalized_target}", "severity": "medium"})
 
     return result
-
 class ProcessArgs:
     def __init__(self, video, target, output, object_class):
         self.video = video
@@ -177,7 +185,10 @@ async def detect_realtime(payload: DetectRequest):
                     }
                 )
 
-        alert_info = build_detection_message(persons, target_detected, payload.detectionType or "person")
+        if payload.isProctoring:
+            alert_info = build_proctoring_message(persons, detected_objects, payload.audioNoise)
+        else:
+            alert_info = build_detection_message(persons, target_detected, payload.detectionType or "person")
         timestamp = datetime.now().strftime("%H:%M:%S")
 
         response_data = {
