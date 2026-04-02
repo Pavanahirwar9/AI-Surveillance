@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import './App.css';
+import ChatWidget from './ChatWidget';
 
 const AI_API_URL = import.meta.env.VITE_AI_API_URL || 'http://localhost:8000';  
 const BACKEND_API_URL = import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:5000';
@@ -595,6 +596,8 @@ function App() {
             } />
           </Routes>
         </main>
+        
+        <ChatWidget />
       </div>
     </BrowserRouter>
   );
