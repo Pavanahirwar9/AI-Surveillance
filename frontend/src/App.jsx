@@ -225,7 +225,9 @@ function ProctoringSystem() {
   const [alertState, setAlertState] = useState({ alert: false, message: 'Proctoring off', severity: 'low', persons: 0 });
   const [history, setHistory] = useState([]);
   const [audioLevel, setAudioLevel] = useState(0);
-  const [liveStats, setLiveStats] = useState({ persons: 0, objects: [], audioNoise: false });
+  const [liveStats, setLiveStats] = useState({ persons: 0, objects: [], audioNoise: false, gazeDirection: 'center' });
+  const [violationCount, setViolationCount] = useState(0);
+  const violationCountRef = useRef(0);
 
   const startAudioMonitoring = async (stream) => {
     try {
@@ -309,11 +311,37 @@ function ProctoringSystem() {
       });
 
       const data = response.data;
+
+      // Handle suspicious gaze sequential checks
+      let currentViolationCount = violationCountRef.current;
+      if (data.type === 'suspicious_gaze') {
+        currentViolationCount += 1;
+      } else {
+        currentViolationCount = 0;
+      }
       
+      violationCountRef.current = currentViolationCount;
+      setViolationCount(currentViolationCount);
+
+      if (currentViolationCount > 5) {
+        alert("Critical Violation: Suspicious gaze detected multiple times. The exam will now be terminated.");
+        
+        setHistory(prev => [...prev, {
+          time: new Date().toLocaleTimeString(),
+          event_type: "critical_violation_exam_terminated",
+          message: "Critical Violation: Exam Terminated due to suspicious gaze.",
+          severity: "high"
+        }].slice(-20));
+
+        stopProctoring();
+        return;
+      }
+
       setLiveStats({
         persons: data.persons || 0,
         objects: data.objects || [],
-        audioNoise: audioNoise
+        audioNoise: audioNoise,
+        gazeDirection: data.gaze_direction || 'center'
       });
 
       setAlertState({
@@ -423,6 +451,14 @@ function ProctoringSystem() {
               <div className="metric-content">
                 <span className="metric-title">Voice Print</span>
                 <span className="metric-value">{!isDetecting ? '--' : (liveStats.audioNoise ? 'ANOMALY DETECTED' : 'SILENT')}</span>
+              </div>
+            </div>
+
+            <div className={`metric-card ${!isDetecting ? '' : (liveStats.gazeDirection !== 'center' ? 'alert' : 'ok')}`}>
+              <span className="metric-icon">👁️</span>
+              <div className="metric-content">
+                <span className="metric-title">Screen Focus</span>
+                <span className="metric-value">{!isDetecting ? '--' : (liveStats.gazeDirection !== 'center' ? `LOOKING ${liveStats.gazeDirection.toUpperCase()}` : 'FOCUSED')}</span>
               </div>
             </div>
 

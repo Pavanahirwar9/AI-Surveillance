@@ -6,3 +6,4 @@ deep-sort-realtime
 fastapi
 uvicorn
 python-multipart
+mediapipe

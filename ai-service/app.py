@@ -14,6 +14,8 @@ import numpy as np
 from ultralytics import YOLO
 from datetime import datetime
 
+from src.gaze_tracking import get_head_pose
+
 # Event History Storage (In-Memory for this example)
 event_history_db = []
 
@@ -82,7 +84,7 @@ def decode_base64_image(image_data: str):
     return frame
 
 
-def build_proctoring_message(persons: int, detected_objects: list, audio_noise: bool) -> dict:
+def build_proctoring_message(persons: int, detected_objects: list, audio_noise: bool, gaze_direction: str = "center") -> dict:
     result = {
         "alert": False,
         "type": "normal",
@@ -100,6 +102,8 @@ def build_proctoring_message(persons: int, detected_objects: list, audio_noise: 
         result.update({"alert": True, "type": "camera_detected", "message": "Secondary camera/laptop detected", "severity": "high"})
     elif audio_noise:
         result.update({"alert": True, "type": "voice_detected", "message": "Voice/noise of another person detected", "severity": "high"})
+    elif gaze_direction != "center":
+        result.update({"alert": True, "type": "suspicious_gaze", "message": f"Suspicious gaze direction ({gaze_direction})", "severity": "medium"})
 
     return result
 
@@ -438,8 +442,10 @@ async def detect_realtime(payload: DetectRequest):
                     }
                 )
 
+        gaze_direction = "center"
         if payload.isProctoring:
-            alert_info = build_proctoring_message(persons, detected_objects, payload.audioNoise)
+            gaze_direction = get_head_pose(frame)
+            alert_info = build_proctoring_message(persons, detected_objects, payload.audioNoise, gaze_direction)
         else:
             alert_info = build_detection_message(persons, target_detected, payload.detectionType or "person")
         timestamp = datetime.now().strftime("%H:%M:%S")
@@ -453,6 +459,7 @@ async def detect_realtime(payload: DetectRequest):
             "persons": persons,
             "objects": list(set(detected_objects)),
             "detections": detections,
+            "gaze_direction": gaze_direction,
             "frame_size": {"width": 320, "height": 240},
         }
 
