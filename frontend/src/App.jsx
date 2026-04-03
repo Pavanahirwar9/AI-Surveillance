@@ -156,7 +156,7 @@ function RealtimeDetection() {
               <option value="car">Car</option>
               <option value="cell phone">Cell Phone</option>
             </select>
-            <button onClick={isDetecting ? stopCamera : startCamera} className={isDetecting ? 'btn-danger' : 'btn-primary'}>
+            <button onClick={isDetecting ? stopCamera : startCamera} className={isDetecting ? 'btn-success' : 'btn-primary'}>
               {isDetecting ? 'Stop Camera' : 'Start Camera'}
             </button>
           </div>
@@ -357,7 +357,7 @@ function ProctoringSystem() {
       <div className="card realtime-card" style={{ padding: '0' }}>
         <div className="card-header" style={{ padding: '20px 20px 0' }}>
           <h2>Exam Proctoring System</h2>
-          <button onClick={isDetecting ? stopProctoring : startProctoring} className={isDetecting ? 'btn-danger' : 'btn-primary'}>
+          <button onClick={isDetecting ? stopProctoring : startProctoring} className={isDetecting ? 'btn-success' : 'btn-primary'}>
             {isDetecting ? 'Stop Exam' : 'Start Exam'}
           </button>
         </div>
