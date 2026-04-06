@@ -7,6 +7,7 @@ start cmd /k "cd ai-service && title AI-Service && ..\.venv311\Scripts\uvicorn.e
 echo Starting Backend Service (Node.js) on Port 5000...
 start cmd /k "cd backend && title Backend && node server.js"
 
+
 echo Starting Frontend Service (React/Vite) on Port 5173...
 start cmd /k "cd frontend && title Frontend && npm run dev"
 

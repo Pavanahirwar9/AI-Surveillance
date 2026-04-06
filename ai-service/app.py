@@ -48,7 +48,6 @@ class DetectRequest(BaseModel):
     detectionType: Optional[str] = "person"
     isProctoring: Optional[bool] = False
     audioNoise: Optional[bool] = False
-    image: str
 
 class ChatRequest(BaseModel):
     message: str
