@@ -267,16 +267,35 @@ function ProctoringSystem() {
 
   const startProctoring = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Your browser does not support media devices. Make sure you are using HTTPS or localhost.");
+      }
+
+      // First try to get both video and audio
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      } catch (mediaErr) {
+        console.warn("Could not get both video and audio, falling back to video only", mediaErr);
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      }
+      
       videoRef.current.srcObject = stream;
       streamRef.current = stream;
       setIsDetecting(true);
       setAlertState({ alert: false, message: 'Initializing Proctoring Session...', severity: 'low', persons: 0 });
       setLiveStats({ persons: 1, objects: [], audioNoise: false });
-      startAudioMonitoring(stream);
+      
+      if (stream.getAudioTracks().length > 0) {
+        try {
+          startAudioMonitoring(stream);
+        } catch (audioErr) {
+          console.warn("Audio monitoring unavailable:", audioErr);
+        }
+      }
     } catch (err) {
       console.error(err);
-      alert("Please allow Camera and Microphone permissions for proctoring.");
+      alert("Error accessing camera/microphone. Please ensure permissions are granted and camera is connected.\n\nDetails: " + err.message);
     }
   };
 
